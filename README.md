@@ -1,3 +1,5 @@
+https://github.com/koroed010/web-larek-frontend.git
+
 # Проектная работа "Веб-ларек"
 
 Стек: HTML, SCSS, TS, Webpack
@@ -53,45 +55,30 @@ interface IProduct {
     category: string;
     price: number;
     inBasket: boolean;
-    events: IEvents
 }
 ```
 
 Интерфейс для вывода всех карточек
 ```
 interface IProductList {
-    total: number;
     items: IProduct[];
-    showDetails: string | null;
+    showFullCard: string | null;
 }
 ```
 
 Данные покупателя
-
 ```
 interface IOrder {
     payment: string;
     address: string;
     email: string;
     phone: string;
-    items: TProductIdInBasket[];
     paymentValid: boolean;
     contactValid: boolean;
 }
 ```
 
-Корзина
-
-```
-interface IBasket {
-    total: number | null;
-    basketCounter: number;
-//    products: TProductInBasket[] | null;
-}
-```
-
 #### Сокращенные данные для карточки товара в списке на главной странице.
-
 ```
 type TProductInfo = Pick<IProduct, 'image' | 'title' | 'category' | 'price'>;
 ```
@@ -103,27 +90,18 @@ type TProductFullInfo = Pick<IProduct, 'image' | 'title' | 'category' | 'price' 
 
 #### Краткие данные для карточки товара в корзине.
 ```
-type TProductBasketInfo = Pick<IProduct, 'id' | 'title' | 'price'>;
+type TProductBasketInfo = Pick<IProduct, 'title' | 'price'> & {index: number};
 ```
 
 #### Поля формы для выбора способа оплаты и ввода адреса покупателя.
-
 ```
 type TOrderPaymentInfo = Pick<IOrder, 'payment' | 'address'>;
 ```
 
 #### Поля формы для ввода адреса эл. почты и номера телефона покупателя.
-
 ```
 type TOrderContacttInfo = Pick<IOrder, 'email' | 'phone'>;
 ```
-
-#### Данные об общей стоимости произведенной покупки в попапе с подтверждением.
-
-```
-type TOrderConfirmInfo = Pick<IBasket, 'total'>;
-```
-
 
 ## Архитектура проекта
 Приложение построено на базе MVP-архитектуры с использованием слоев данных, представлений и соединяющего их презентера при посредничестве брокера событий.
@@ -150,37 +128,50 @@ type TOrderConfirmInfo = Pick<IBasket, 'total'>;
 - просмотр корзины с возможностью удалить из нее ранее добавленный товар и с переходом к процедуре оформления заказа, предусматривающим получение контактных данных покупателя, с последующей оплатой покупки.
 
 #### Класс ProductData (интерфейс IProduct)
-Содержит данные об одном товаре.\
-Имена свойств и их типы данных соответствуют представлению в API.\
+Расширяет объект карточки продукта (Card), получаемый из API.\
+Содержит данные об одном товаре и информацию - добавлен он в корзину или нет.\
 
-Действия с карточкой товара: 
-- добавить товар в корзину. Добавление однократное, потом можно отключить кнопку,
-- получать и сохранять данные с помощью методов set и get,
-- эмитировать соответствующее событие.
+Действий и отслеживаемых событий для карточки товара не предусмотрено - все методы, слушатели и эмиттеры событий будут реализованы в других классах.
 
 ```
-    id: string;
-    description: string;
-    image: string;
-    title: string;
-    category: string;
-    price: number;
-    inBasket: boolean;
-    events: IEvents;
+extends Card {
+    inBasket: boolean; - признак добавления товара в корзину.
+}
+```
 
-    sendToBasket(productId: string): TProductInBasket;
+#### Класс ProductsListData (интерфейс IProductList)
+Поля класса: массив карточек товаров, id карточки для просмотра,
+
+Действия со списком товаров:
+- получить данные с сервера,
+- выбрать карточку для детального просмотра,
+- добавить товар в корзину,
+- удалить товар из корзины,
+- подсчитать общую стоимость товаров в корзине,
+- подсчитать общее количество товаров в корзине,
+- получать и сохранять данные с помощью методов set и get,
+- эмитировать событие для рендера списка товаров, вывода попапа с детальной информацией о товаре, .
+
+```
+    items: IProduct[]; - массив объектов типа карточка,
+    showFullCard: string | null; - id краточки для отображения в попапе, тип - string,
+    events: IEvents; - экземпляр брокера событий,
+
+    getProductList(): IProduct[]; - получить данные с сервера,
+    selectProduct(productId: string): IProduct; - выбрать карточку для детального просмотра,
+    updateBasketCounter(items: IProduct[]): number; - подсчитать общее количество товаров в корзине,
+    countBasketTotal(items: IProduct[]): number | null; - подсчитать общую стоимость товаров в корзине,
+    addProductToBasket(productId: string): void; - добавить товар в корзину,
+    deleteProductFromBasket(productId: string, payload: Function | null): void; - удалить товар из корзины,
 ```
 
 #### Класс OrderData (интерфейс IOrder)
-Содержит данные о товарах данные покпателя.\
+Содержит данные покпателя.\
 Имена свойств и их типы данных соответствуют представлению в API.\
-Подписан на событие добавления товара в корзину.\
 
 Действия с оформлением заказа:
-- получить и сохранить информацию о добавленном в корзину товаре, ???
-- подсчитать общую стоимость товаров в корзине, ???
 - получить и сохранить информацию о покупателе,
-- валидировать информацию о покупателе,
+- валидировать форму с информацией о покупателе,
 - передать данные заказа на сервер,
 - получить и обработать ответ сервера,
 - удалить введенные данные покупателя (для очистки формы),
@@ -188,65 +179,21 @@ type TOrderConfirmInfo = Pick<IBasket, 'total'>;
 - эмитировать соответствующее событие.
 
 ```
-    payment: string;
-    address: string;
-    email: string;
-    phone: string;
-    items: TProductIdInBasket[];
-    paymentValid: boolean;
-    contactValid: boolean;
-    events: IEvents;
+    payment: string; - выбранный способ оплаты (одна из кнопок формы Order), тип - string,
+    address: string; - адрес покупателя из инпута формы Order, тип - string,
+    email: string; - email покупателя из инпута формы Contacts, тип - string,
+    phone: string; - телефон покупателя из инпута формы Contacts, тип - string,
+    paymentValid: boolean; - признак валидности заполнения формы Order, тип - булевый, дефолтное значение false,
+    contactValid: boolean; - признак валидности заполнения формы Contacts, тип - булевый, дефолтное значение false,
+    events: IEvents; - экземпляр брокера событий,
 
-    getOrderPaymentInfo(data: TOrderPaymentInfo): void;
-    getOrderContactInfo(data: TOrderContactInfo): void;
-    checkOrderPaymentInfo(data: Record<keyof TOrderPaymentInfo, string>): boolean;
-    checkOrderContactInfo(data: Record<keyof TOrderContactInfo, string>): boolean;
-    sendOrder(order: IOrder): void;
-    resetOrderInfo(order: IOrder): IOrder;
+    getOrderPaymentInfo(data: TOrderPaymentInfo): void; - получить и сохранить способ оплаты и адрес,
+    getOrderContactInfo(data: TOrderContactInfo): void; - получить и сохранить email и телефон,
+    checkOrderPaymentInfo(data: Record<keyof TOrderPaymentInfo, string>): boolean; - валидировать форму с информацией - способ оплаты и адрес,
+    checkOrderContactInfo(data: Record<keyof TOrderContactInfo, string>): boolean; - валидировать форму с информацией - email и телефон,
+    sendOrder(order: IOrder): void; - передать данные заказа на сервер, получить и обработать ответ сервера,
+    resetOrderInfo(order: IOrder): IOrder; - удалить введенные данные покупателя (для очистки формы),
 ```
-
-#### Класс ProductsListData (интерфейс IProductList)
-Отвечает за получение массива карточек с сервера, подготовку полученных данных для отображени на странице,
-Действия со списком товаров:
-- получить данные с сервера,
-- выбрать карточку для детального просмотра,
-- получать и сохранять данные с помощью методов set и get,
-- эмитировать событие для рендера списка товаров / вывода попапа с детальной информацией о товаре.
-
-```
-    total: number;
-    items: IProduct[];
-    showDetails: string | null;
-    events: IEvents; 
-
-    getProductList(): IProduct[];
-    selectProduct(productId: string): IProduct;
-```
-
-#### BasketData (интерфейс IBasket)
-Содержит данные о товарах в корзине.\
-Подписан на событие добавления товара в корзину.\
-
-Действия с корзиной:
-- получить и сохранить информацию о добавленном в корзину товаре,
-- удалить товар из корзины и при необходимости вызвать колбэк,
-- подсчитать общую стоимость товаров в корзине,
-- подсчитать общее количество товаров в корзине,
-- получать и сохранять данные с помощью методов set и get,
-- эмитировать соответствующее событие после каждого действия в корзине.
-
-```
-    total: number;
-    basketCounter: number;
-    products: TProductInBasket[] | null;
-    events: IEvents;
-
-    updateBasketCounter(products: TProductInBasket[]): number;
-    countTotal(products: TProductInBasket[]): number | null;
-    addProduct(product: TProductInBasket): void;
-    deleteProduct(productId: string, payload: Function | null): void;
-```
-
 
 
 ### Классы слоя представления
@@ -255,10 +202,53 @@ type TOrderConfirmInfo = Pick<IBasket, 'total'>;
 #### Класс Modal
 Общий класс для всех попапов, имеющий набор стандартных методов:\
 открытие, закрытие, в т.ч. Esc, клик по кнопке закрытия или оверлею. Устанавливает соответствующие слушатели событий.\
-Содержимое окна и специфический функционал будут определяться передаваемым в конструктор темплейтом и экземпляром класса 'EventEmitter'.\
+
+Конструктор класса принимает селектор модального окна, селектор темплейта, объект с данными для элементов темплейта и экземпляр класса 'EventEmitter'.\
+
+Содержимое окна и специфический функционал будут определяться внутри модалки:
+- при открытии на главной странице - просмотр карточки или корзины,
+- из открытой корзины - переход к форме с выбором способа оплаты и ввода адреса,
+- далее - переход к форме с вводом email и телефона,
+- далее - к сообщению об успешном оформлении заказа.
+
+Поля:
+- modal: HTMLElement; - модальное окно по селектору из конструктора,
+- events: EventEmitter; - экземпляр класса брокера событий,
+- content: HTMLElement; - темплейт по селектору из конструктора,
+
+- submitButton: buttonHTMLElement; - кнопка подтверждения,
+- handleSubmit: Function; - обработчик сабмита, индивидуальный для каждого попапа,
+
+Опциональные поля - для конкретных попапов (с помощью префикса, соответствующего разметке, будем получать уникальные имена полей):
+- title?: string; - для товара в списке, в корзине и в предпросмотре, подтверждения заказа, в корзине, в первом окне заказа,
+- description?: string; - для окна подтверждения заказа,
+- category?: string; - для товара в списке и в предпросмотре,
+- image?: string; - для товара в списке и в предпросмотре,
+- price?: number; - для товара в списке, в корзине и в предпросмотре, в корзине,
+- text?: string; - для товара в предпросмотре,
+- itemIndex?: number; - для товара в корзине,
 
 
+- constructor(selector: string, content: string, data: {}, events: IEvents); - конструктор принимает селектор модального окна, селектор, по которому будет находиться темплейт для отображения в модальном окне, объект с данными для элементов темплейта и экземпляр класса брокера событий для генерирования собственных событий и реакции на события извне,
 
+Методы:
+- open(modal: string): HTMLElement; - открывает модальное окно,
+- close(modal: string): void; - закрывает модальное окно,
+- closeByEsc(event: IEvents): void; - вызывает метод close() при нажатии Esc,
+- closeByOverlay(event: IEvents): void; - вызывает метод close() при нажатии на крестик или оверлей,
+
+- submit(content: string, data: {}, handleSubmit: Function): void; - назначаемый для каждого темплейта обработчик сабмита и объект с данными для элементов следующего отрисовываемого темплейта,
+
+- openFullCard(content: string, data: {}): HTMLElement; - отрисовывает элемент карточки товара в модальном окне,
+- closeFullCard(): void: - удаляет карточку из разметки, 
+- openBasket(content: string, data: {}): HTMLElement; - отрисовывает корзину в модальном окне,
+- closeBasket(): void: - удаляет корзину из разметки,
+- openOrder(content: string, data: {}): HTMLElement; - отрисовывает форму для выбора способа оплаты и ввода адреса в модальном окне,
+- closeOrder(): void: - удаляет форму из разметки,
+- openContacts(content: string, data: {}): HTMLElement; - отрисовывает форму для ввода email и телефона в модальном окне,
+- closeContacts(): void: - удаляет форму из разметки,
+- openSuccess(content: string, data: {}): HTMLElement; - отрисовывает в модальном окне сообщение об удачном оформлени и заказа,
+- closeSuccess(): void: - удаляет сообщение из разметки,
 
 
 #### Класс ProductsList
@@ -267,24 +257,41 @@ type TOrderConfirmInfo = Pick<IBasket, 'total'>;
 Позволяет выбрать карточку для детального просмотра в попапе.
 
 Поля класса:
-- items: IProduct[];
-- showDetails: string | null;
-- events: IEvents;
+- items: IProduct[]; - массив объектов типа карточка,
+- showFullCard: string | null; - id краточки для отображения в попапе, тип - string,
+- events: IEvents; - экземпляр брокера событий,
+
+Методы:
+- galleryRender(items: IProduct[], container: HTMLElement): void; - выводит карточки в контейнер,
+
+Генерируемые события:
+- 'card-preview:chosen' - выбран товара для просмотра,
+
+Отслеживаемые события:
+- 'gallery:loaded' - получение массива карточек товаров с сервера,
 
 
-#### Класс BasketCounter
-Отвечает за отображение на главной странице количества товаров в корзине.\
-Поле:
-- basketCounter: number - через конструктор класса получаем данные из модели.
+#### Класс Basket
+Отвечает за отображение на главной странице количества товаров в корзине и за открытие корзины.\
+Поля класса:
+- basketCounter: number - получаем из модели данные о количестве товаров в корзине,
+- events: IEvents; - экземпляр брокера событий,
 
 Метод:
-- updateCounter(basketCounter: number): viod     - По событию "корзина изменилась" обновляет span.
+- updateCounter(basketCounter: number): viod  - по событию "корзина изменилась" обновляет span.
+
+Генерируемые события:
+- 'basket:open' - переход в корзину,
+
+Отслеживаемые события:
+- 'basket:canged' - изменение в корзине,
 
 
 ### Слой коммуникации
 
 #### Класс AppAPI
 Класс через конструктор создает экземпляр API с методами для взаимодействия с сервером.\
+
 
 ## Взаимодействие компонентов
 
@@ -295,18 +302,18 @@ type TOrderConfirmInfo = Pick<IBasket, 'total'>;
 Список всех событий, которые могут генерироваться в приложении.\
 
 Список изменений данных, которые необходимо отражать в представлении (генерируются классами модели данных):
-- 'basket:canged' - изменение состава корзины,
-- 'basket-total:changed' - вычисление общей стоимости товаров в корзине,
-- 'basket-amount:changed' - вычисление количества товаров в корзине,
+- 'gallery:loaded' - получение массива карточек товаров с сервера,
+- 'basket:canged' - изменение состава корзины (в т.ч. общей стоимости товаров в корзине и количества товаров в корзине),
 - 'order:save' - сохранение данных о покупателе (1 этап - способ оплаты и адрес),
 - 'contacts:save' - сохранение данных о покупателе (2 этап - email и номер телефона),
 - 'success' - подтверждение оформления заказа,
 - 'card-preview:clear' - очистить данные превью товара при закрытии попапа,
 - 'order:clear' - очистка формы первого этапа оформления заказа,
-- 'contacts:clear' - очистка формы второго этапа оформления заказа.
+- 'contacts:clear' - очистка формы второго этапа оформления заказа,
+- 'basket:clear' - очистка корзины после оформления заказа.
 
 Список событий, возникающих при взаимодействии пользователя с интерфейсом (генерируются классами представления):
-- 'card-preview:chose' - выбор товара для просмотра,
+- 'card-preview:chosen' - выбор товара для просмотра,
 - 'card-basket:add' - добавление товара в корзину,
 - 'basket:open' - переход в корзину,
 - 'card-basket:delete' - удаление товара из корзины,
