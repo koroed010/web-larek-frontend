@@ -5,7 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="theme-color" content="#000000" />
 	<link rel="icon" href="/favicon.ico" />
-	<link rel="manifest" href="/manifest.json" />
+<!--	<link rel="manifest" href="/manifest.json" /> -->
 	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -31,12 +31,23 @@
 		<main class="gallery"></main>
 	</div>
 
-	<div class="modal" id="modal-container">
+	<div class="modal" id="modal-container" popover="auto">
 		<div class="modal__container">
 			<button class="modal__close" aria-label="закрыть"></button>
 			<div class="modal__content">
 
 			</div>
+		</div>
+	</div>
+
+	<div class="modal">
+		<div class="modal__container">
+			<button class="gallery__item card">
+				<span class="card__category card__category_soft">софт-скил</span>
+				<h2 class="card__title">+1 час в сутках</h2>
+				<img class="card__image" src="<%=require('../images/Subtract.svg')%>" alt="" />
+				<span class="card__price">750 синапсов</span>
+			</button>
 		</div>
 	</div>
 

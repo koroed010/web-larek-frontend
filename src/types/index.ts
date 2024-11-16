@@ -1,61 +1,60 @@
-export interface IProduct {
-    id: string;
-    description: string;
-    image: string;
-    title: string;
-    category: string;
-    price: number;
-    inBasket: boolean;
-//     events: IEvents;
 
+export interface IApiProduct {
+    id: string;
+    description?: string;
+    image?: string;
+    title: string;
+    category?: string;
+    price: number;
+}
+
+export interface IApiProductsList {
+    items: IApiProduct[];
+}
+
+export interface IProduct extends IApiProduct {
+    inBasket?: boolean;
 }
 
 export interface IProductList {
     items: IProduct[];
     showFullCard: string | null;
-//     events: IEvents;
 
-    getProductList(): IProduct[];
-    selectProduct(productId: string): IProduct;
-    updateBasketCounter(items: IProduct[]): number;
-    countBasketTotal(items: IProduct[]): number | null;
-    addProductToBasket(productId: string): void;
-    deleteProductFromBasket(productId: string, payload: Function | null): void;
+    set setProductList(items: IProduct[]);
+    get getProductList(): IProduct[];
+    get getBasketProductList(): TProductBasketInfo[];
+    get getBasketIdList(): string[];
+    set setShowFullCard(productId: string);
+    get selectProduct(): IProduct;
+
+    clearSelectedProduct(): void;
+    updateBasketCounter(): number;
+    countBasketTotal(): number | null;
+    changeProductInBasket(productId: string): void;
 }
 
-//export interface IBasket {
-//    total: number | null;
-//    basketCounter: number;
-//   products: TProductInBasket[] | null;
-//     events: IEvents;
-//}
+export interface IApi {
+    baseUrl: string;
+    get<T>(uri: string): Promise<T>;
+    post<T>(uri: string, data: object, method?: ApiPostMethods): Promise<T>
+}
 
 export interface IOrder {
     payment: string;
     address: string;
     email: string;
     phone: string;
-    paymentValid: boolean;
-    contactValid: boolean;
-//     events: IEvents;
-
-    getOrderPaymentInfo(data: TOrderPaymentInfo): void;
-    getOrderContactInfo(data: TOrderContactInfo): void;
-    checkOrderPaymentInfo(data: Record<keyof TOrderPaymentInfo, string>): boolean;
-    checkOrderContactInfo(data: Record<keyof TOrderContactInfo, string>): boolean;
-    sendOrder(order: IOrder, itemsId: string[], totalSum: number): void;
-    resetOrderInfo(order: IOrder): IOrder;
-
 }
 
+export type TProductInfo = Pick<IProduct, 'id' | 'image' | 'title' | 'category' | 'price'>;
 
-export type TProductInfo = Pick<IProduct, 'image' | 'title' | 'category' | 'price'>;
-export type TProductFullInfo = Pick<IProduct, 'image' | 'title' | 'category' | 'price' | 'description'>;
-export type TProductBasketInfo = Pick<IProduct, 'title' | 'price'> & {index: number};
+export type TProductBasketInfo = Pick<IProduct, 'id' | 'title' | 'price' >;
 
 export type TOrderPaymentInfo = Pick<IOrder, 'payment' | 'address'>;
 export type TOrderContactInfo = Pick<IOrder, 'email' | 'phone'>;
+export type TOrderSuccessInfo = {total: number};
 
+export type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
 
-
+export type ApiPostMethods = 'POST' | 'PUT' | 'DELETE' | 'PATCH'; // not used
 

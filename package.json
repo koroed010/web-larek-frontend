@@ -16,13 +16,15 @@
     "eslint": "^8.39.0",
     "eslint-config-prettier": "^8.8.0",
     "gh-pages": "^5.0.0",
+    "gulp-pug": "^5.0.0",
+    "gulp-sass": "^5.1.0",
     "html-webpack-plugin": "^5.5.1",
     "mini-css-extract-plugin": "^2.7.5",
     "postcss": "^8.4.23",
     "postcss-loader": "^7.3.0",
     "prettier": "^2.8.8",
     "resolve-url-loader": "^5.0.0",
-    "sass": "^1.62.1",
+    "sass": "^1.79.5",
     "sass-loader": "^13.2.2",
     "style-loader": "^3.3.2",
     "terser-webpack-plugin": "^5.3.10",
@@ -43,5 +45,9 @@
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier ./src --write",
     "deploy": "gh-pages -d dist"
+  },
+  "author": "",
+  "dependencies": {
+    "stylelint": "^16.10.0"
   }
 }
