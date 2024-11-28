@@ -6,6 +6,7 @@ export class Modal <T> extends Component <T>{
     constructor(protected container: HTMLElement) {
         super(container);
         this.modal = document.querySelector('.modal__content');
+        this.container.setAttribute('style', 'position: fixed');
 
 // обработка клика по кнопке закрытия
 // + обработка клика по оверлею
@@ -21,7 +22,7 @@ export class Modal <T> extends Component <T>{
         this.closeByEscape = this.closeByEscape.bind(this);
     };
 
-    set setElement(element: HTMLElement) {
+    set element(element: HTMLElement) {
         this.modal.append(element);
     };
 

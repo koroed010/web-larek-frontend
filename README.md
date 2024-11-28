@@ -60,7 +60,7 @@ interface IApiProduct {
 Массив карточек товаров, получаемый из API
 ```
 interface interface IApiProductsList {
-    items: IProduct[];
+    items: IApiProduct[];
 }
 ```
 
@@ -95,6 +95,14 @@ interface IOrder {
     address: string;
     email: string;
     phone: string;
+}
+```
+
+Интерфейс для результата проверки правильности заполения форм ввода данных покупателя и соответствующего сообщения об ошибке
+```
+interface ICheckResult {
+    status: boolean;
+    message: string;
 }
 ```
 
@@ -178,12 +186,12 @@ type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
     showFullCard: string | null; - id краточки для отображения в попапе, тип - string,
     events: IEvents; - экземпляр брокера событий,
 
-    setProductList(); - инициирует массив всех карточек товаров, используя данные API,
-    getProductList(): IProduct[]; - возвращает массив всех карточек товаров для главной страницы,
-    getBasketProductList(): TProductBasketInfo[]; - возвращает массив карточек товаров для корзины,
-    getProductIdList(): string[]; - возвращает массив id карточек товаров в корзине - для формирования данных заказа,
-    setShowFullCard(productId: string); - сохраняет id карточки для детального просмотра,
-    selectProduct(productId: string): IProduct; - возвращает карточку для детального просмотра,
+    set productList(); - инициирует массив всех карточек товаров, используя данные API,
+    get productList(): IProduct[]; - возвращает массив всех карточек товаров для главной страницы,
+    get basketProductList(): TProductBasketInfo[]; - возвращает массив карточек товаров для корзины,
+    get productIdList(): string[]; - возвращает массив id карточек товаров в корзине - для формирования данных заказа,
+    set fullCard(productId: string); - сохраняет id карточки для детального просмотра,
+    get selectedProduct(): IProduct; - возвращает карточку для детального просмотра,
     clearSelectedProduct(): void; - очищает поле showFullCard при закрытии окна детального просмотра товара,
     updateBasketCounter(): number; - подсчитать общее количество товаров в корзине,
     countBasketTotal(): number | null; - подсчитать общую стоимость товаров в корзине,
@@ -205,7 +213,7 @@ type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
 
 Действия с оформлением заказа:
 - получить и сохранить информацию о покупателе,
-- валидировать форму с информацией о покупателе,
+- валидировать форму с информацией о покупателе и, в случае некорректного заполнения, составить сообщение об ошибке,
 - удалить введенные данные покупателя (для очистки формы),
 - получать и сохранять данные с помощью методов set и get,
 - эмитировать соответствующеие события.
@@ -219,22 +227,25 @@ type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
     phone: string; - телефон покупателя из инпута формы Contacts, тип - string,
     protected fullOrder: TOrderFullInfo; - данные для отправки заказа на сервер,
     events: IEvents; - экземпляр брокера событий,
+    status: boolean; - результат проверки корректности заполения формы,
+    message: string; - сообщение об ошибке заполнения формы,
 
-    set setPaymentData(data: string); - получить и сохранить способ оплаты,
-    set setAddressData(data: string); - получить и сохранить адрес,
-    set setEmailData(data: string); - получить и сохранить email,
-    set setPhoneData(data: string); - получить и сохранить телефон,
+    set paymentData(data: string); - получить и сохранить способ оплаты,
+    set addressData(data: string); - получить и сохранить адрес,
+    set emailData(data: string); - получить и сохранить email,
+    set phoneData(data: string); - получить и сохранить телефон,
     checkInput(input: string | null): boolean; - проверка корректного инпута (не пустое поле),
-    checkOrder(): boolean; - валидировать форму с информацией - способ оплаты и адрес,
-    checkContacts(): boolean; - валидировать форму с информацией - email и телефон,
-    get collectOrder(): TOrderFullInfo; - собирает и возвращает данные о покупателе для подготовки отправки заказа на сервер,
+    checkOrder(): ICheckResult; - валидировать форму с информацией - способ оплаты и адрес и, в случае некорректного заполнения, составить сообщение об ошибке,
+    checkContacts(): ICheckResult; - валидировать форму с информацией - email и телефон и, в случае некорректного заполнения, составить сообщение об ошибке,
+    get collectedOrder(): TOrderFullInfo; - собирает и возвращает данные о покупателе для подготовки отправки заказа на сервер,
     resetOrderInfo(): void; - удаляет введенные данные покупателя из модели (для очистки формы),
 ```
 
 Генерируемые события:
 - 'payment:saved' - информация о способе оплаты сохранена,
 - 'address:saved' - адрес сохранен,
-- 'contacts:saved' - email или номер телефона сохранен.
+- 'contacts:saved' - email или номер телефона сохранен,
+- 'orderInfo:reseted' - очистка полей для данных о покупателе.
 
 
 ### Классы слоя представления
@@ -254,8 +265,8 @@ type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
 устанавливает слушатель на иконку корзины.\
 
 Методы:
-- setBasketCounter(data: number); - сеттер для количества товаров в корзине,
-- render(prodArray: Partial<IProduct[]> | undefined); - вывод галлереи карточек товаров.
+- set counter(data: number); - сеттер для количества товаров в корзине,
+- set galleryItems(galleryList: HTMLElement[]); - сеттер для галлереи карточек товаров.
 
 Генерируемые события:
 - basket:open - было нажатие на иконку корзины.
@@ -268,14 +279,15 @@ type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
 - modal: HTMLElement; - контейнер для размещения содержимого модального окна,
 
 - constructor(selector: string); - конструктор принимает элемент модального окна, 
+выполняет донастройку стилей в соответствии с макетом, 
 устанавливает слушатели на Esc, крестик и оверлей с вызывом метода close().
 
 Методы:
-- set setElement(element: HTMLElement); - помещает передаваемый элемент в контейнер модального окна,
-- deleteElement(); - удаляет элемент из контейнера модального окна,
+- set element(element: HTMLElement); - помещает передаваемый элемент в контейнер модального окна,
+- deleteElement(): void; - удаляет элемент из контейнера модального окна,
 - openModal(): void; - открывает модальное окно,
 - closeModal(): void; - закрывает модальное окно,
-- closeByEsc(event: IEvents): void; - вызывает метод close() при нажатии Esc,
+- closeByEscape(event: KeyboardEvent): void; - вызывает метод close() при нажатии Esc,
 
 
 #### Класс ProductView
@@ -314,9 +326,16 @@ type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
 
 
 #### Класс Basket
+Класс наследует Component.
 Отвечает за вывод информации в DOM-элемент корзины с контейнером для списка товаров и элементом для вывода общей стоимости корзины.
 Сообщает о действиях пользователя:
 - нажатие кнопки перехода к оформлению заказа.
+
+Интерфейс для передачи в Component.
+interface IBasketView {
+    items: HTMLElement[];
+    total: number;
+}
 
 Поля:
 - events: IEvents; - экземпляр класса брокера событий,
@@ -330,25 +349,26 @@ type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
 устанавливает слушатель на кнопку перехода к оформлению заказа.\
 
 Методы:
-- clearBasketList(): void; - удаляет из разметки корзины список товаров,
-- set setBasketList(basketItemElement: HTMLElement); - добавляет строку с товаром в разметку корзины,
-- get getBasket(): HTMLElement; - возвращает элемент корзины для модального окна,
-- render(total: number): HTMLElement;  - отрисовывает корзину.
+- set basketTotal(total: number); - заполняет элемент общей стоимости товаров в корзине,
+- set basketItems(itemsList: HTMLElement[]); - заполняет контейнер списком товаров,
 
 Генерирует событие:
 - 'order:start' - переход из корзины к оформлению заказа (1 этап - способ оплаты и адрес),
 
 
 #### Класс OrderPaymentView
+Класс наследует Component.
 Создает DOM-элемент с формой для выбора способа оплаты и заполнения поля с адресом.\
+В случае некорректного заполнения формы выводит сообщение об ошибке.\
 Сообщает о заполнении полей формы и передает введенную информацию.\
 
 Поля:
 - events: IEvents; - экземпляр класса брокера событий,
 - orderButton: HTMLButtonElement; - кнопка "Далее",
-- orderCashButton: HTMLButtonElement; - способ оплаты наличными,
-- orderCardButton: HTMLButtonElement; - способ оплаты картой,
+- orderCashButton: HTMLButtonElement; - способ оплаты - наличными,
+- orderCardButton: HTMLButtonElement; - способ оплаты - картой,
 - orderAddress: HTMLInputElement; - адрес,
+- orderFormError: HTMLInputElement; - сообщение об ошибке заполнения формы.
 
 - constructor(events: IEvents, protected container: HTMLFormElement)
 Конструктор класса принимает элемент с формой и экземпляр класса 'EventEmitter',
@@ -357,9 +377,8 @@ type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
 
 Методы:
 - setPaymentButton(payment: string): void; - выделяет кнопку с выбранной формой оплаты,
-- setOrderButton(status: boolean): void; - активирует/дезактивирует кнопку продолжения оформления заказа,
+- setOrderButton(checkResult: ICheckResult): void; - активирует/дезактивирует кнопку продолжения оформления заказа, в случае некорректного заполнения формы выводит сообщение об ошибке.
 - resetPaymentInfo(): void; - очищает поле ввода, отменяет выделение кнопки способа оплаты и дезактивирует кнопку продолжения оформления заказа,
-- render(): HTMLElement; - отрисовывает форму для выбора способа оплаты и заполнения поля с адресом,
 
 Генерирует событие:
 - 'payment:input' - нажата кнопка способа оплаты,
@@ -368,7 +387,9 @@ type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
 
 
 #### Класс OrderContactsView
+Класс наследует Component.
 Создает DOM-элемент с формой для ввода email и номера телефона.\
+В случае некорректного заполнения формы выводит сообщение об ошибке.\
 Сообщает о заполнении полей формы и передает введенную информацию.\
 
 Поля:
@@ -376,6 +397,7 @@ type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
 - contactsButton: HTMLButtonElement; - кнопка "Оплатить",
 - orderEmail: HTMLInputElement; - адрес эл. почты,
 - orderPhone: HTMLInputElement; - номер телефона,
+- orderFormError: HTMLInputElement; - сообщение об ошибке заполнения формы.
 
 - constructor(events: IEvents, protected container: HTMLFormElement)
 Конструктор класса принимает элемент с формой и экземпляр класса 'EventEmitter',
@@ -383,9 +405,8 @@ type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
 устанавливает слушатели на поля ввода и на кнопку оплаты заказа.\
 
 Методы:
-- setContactsButton(status: boolean): void; - активирует/дезактивирует кнопку оплаты заказа,
+- setContactsButton(checkResult: ICheckResult): void; - активирует/дезактивирует кнопку оплаты заказа, в случае некорректного заполнения формы выводит сообщение об ошибке.
 - resetContactsInfo(): void; - очищает поля ввода и дезактивирует кнопку оплаты заказа,
-- render(): HTMLElement; - отрисовывает форму для выбора способа оплаты и заполнения поля с адресом,
 
 Генерирует событие:
 - 'email:input' - введен email,
@@ -394,6 +415,7 @@ type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
 
 
 #### Класс OrderSuccessView
+Класс наследует Component.
 Создает DOM-элемент с сообщением "Заказ оформлен" и информацией о списанной стоимости покупки.\
 
 Поля:
@@ -407,8 +429,7 @@ type TOrderFullInfo = IOrder & {total: number} & {items: string[]};
 устанавливает слушатель на кнопку "За новыми покупками!".\
 
 Методы:
-- render(): HTMLElement; - отрисовывает элемент с сообщением "Заказ оформлен" и информацией о списанной стоимости покупки,
-- set setData(total: number); - сеттер информации о списанной стоимости покупки.
+- set totalData(total: number); - сеттер информации о списанной стоимости покупки.
 
 Генерирует событие:
 - 'order:finished' - завершение работы с заказом (кнопка "За новыми покупками"),

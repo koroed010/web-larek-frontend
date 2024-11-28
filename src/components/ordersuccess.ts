@@ -1,5 +1,4 @@
 import { TOrderSuccessInfo } from '../types';
-import { cloneTemplate } from '../utils/utils';
 import { Component } from './base/component';
 import { IEvents } from './base/events'
 
@@ -23,13 +22,9 @@ export class OrderSuccessView extends Component <TOrderSuccessInfo>  {
         )
     }
 
-    set setData(total: number) {
+    set totalData(total: number) {
         this.basketTotal.textContent = `Списано ${total} синапсов`;
     }
-
-    render(): HTMLElement {
-        return this.container;
-    };
 }
 
 

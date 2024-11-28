@@ -10,7 +10,7 @@ export class ProductsListData {
         this.events = events
     }
 
-    set setProductList(items: IProduct[]) {
+    set productList(items: IProduct[]) {
         items.forEach((item: IProduct) => {
             Object.assign(item, {inBasket: false});
         })
@@ -19,12 +19,12 @@ export class ProductsListData {
     };
 
 // для вывода карточек на главной странице    
-    get getProductList(): IProduct[] {
+    get productList(): IProduct[] {
         return this._items;
     };
 
 // для формирования корзины - отбираем массив карточек товаров в корзине
-    get getBasketProductList(): TProductBasketInfo[] {
+    get basketProductList(): TProductBasketInfo[] {
         let basketArray: TProductBasketInfo[] = [];
         this._items.forEach((item: IProduct) => {
             if(item.inBasket) basketArray.push({id: item.id, price: item.price, title: item.title})
@@ -33,7 +33,7 @@ export class ProductsListData {
     };
 
     // для формирования заказа - отбираем массив id товаров в корзине
-    get getBasketIdList(): string[] {
+    get basketIdList(): string[] {
         let basketArray: string[] = [];
          this._items.forEach((item: IProduct) => {
             if(item.inBasket) basketArray.push(item.id)
@@ -41,12 +41,12 @@ export class ProductsListData {
         return basketArray;
     };
 
-    set setShowFullCard(productId: string) {
+    set fullCard(productId: string) {
         this._showFullCard = productId;
         this.events.emit('card-preview-id:saved')
     };
 
-    get selectProduct(): IProduct {
+    get selectedProduct(): IProduct {
         let selectedProduct: IProduct;
         this._items.forEach((item) => {
             if (item.id === this._showFullCard) selectedProduct = item

@@ -20,12 +20,12 @@ export interface IProductList {
     items: IProduct[];
     showFullCard: string | null;
 
-    set setProductList(items: IProduct[]);
-    get getProductList(): IProduct[];
-    get getBasketProductList(): TProductBasketInfo[];
-    get getBasketIdList(): string[];
-    set setShowFullCard(productId: string);
-    get selectProduct(): IProduct;
+    set ProductList(items: IProduct[]);
+    get ProductList(): IProduct[];
+    get BasketProductList(): TProductBasketInfo[];
+    get BasketIdList(): string[];
+    set fullCard(productId: string);
+    get selectedProduct(): IProduct;
 
     clearSelectedProduct(): void;
     updateBasketCounter(): number;
@@ -44,6 +44,11 @@ export interface IOrder {
     address: string;
     email: string;
     phone: string;
+}
+
+export interface ICheckResult {
+    status: boolean;
+    message: string;
 }
 
 export type TProductInfo = Pick<IProduct, 'id' | 'image' | 'title' | 'category' | 'price'>;

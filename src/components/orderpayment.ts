@@ -1,4 +1,4 @@
-import { TOrderPaymentInfo } from '../types';
+import { ICheckResult, TOrderPaymentInfo } from '../types';
 import { Component } from './base/component';
 import { IEvents } from './base/events'
 
@@ -10,18 +10,23 @@ export class OrderPaymentView extends Component <TOrderPaymentInfo> {
     protected orderCardButton: HTMLButtonElement;
     protected orderAddress: HTMLInputElement;
 
+    protected orderFormError: HTMLInputElement;
+
     constructor(events: IEvents, protected container: HTMLFormElement) {
         super(container);        
         this.events = events;
 
         this.orderButton = container.querySelector('.order__button');
+        this.orderFormError = container.querySelector('.form__errors');
+        this.orderFormError.setAttribute('style', 'color: #FF6060');
 
         this.orderCashButton = container.cash;
         this.orderCardButton = container.card;
         this.orderAddress = container.address;
 
         this.container.querySelectorAll('.modal__title').forEach((title) => title.setAttribute('style', 'color: #FFFFFF'));
-        this.orderAddress.setAttribute('required', 'true');
+        this.container.querySelector('.form__input').setAttribute('style', 'border-color: #FFFFFF');
+//        this.orderAddress.setAttribute('required', 'true');
 
         this.orderAddress.addEventListener('input', () => 
             this.events.emit('address:input', {address: this.orderAddress.value})
@@ -51,8 +56,9 @@ export class OrderPaymentView extends Component <TOrderPaymentInfo> {
         }
     }
 
-    setOrderButton(status: boolean): void  {
-        status ? this.orderButton.removeAttribute('disabled') : this.orderButton.setAttribute('disabled', 'true');
+    setOrderButton(checkResult: ICheckResult): void {
+        checkResult.status ? this.orderButton.removeAttribute('disabled') : this.orderButton.setAttribute('disabled', 'true');
+        this.orderFormError.textContent = checkResult.message;
     }
 
     resetPaymentInfo(): void {
@@ -60,11 +66,7 @@ export class OrderPaymentView extends Component <TOrderPaymentInfo> {
         this.orderCashButton.classList.remove('button_alt-active');
         this.orderButton.setAttribute('disabled', 'true');
         this.orderAddress.value = "";
-    }    // OK
-
-    render(): HTMLElement {
-        return this.container;
-    };
+    }
 }
 
 

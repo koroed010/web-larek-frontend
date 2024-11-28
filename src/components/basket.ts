@@ -1,6 +1,13 @@
+import { createElement } from '../utils/utils';
+import { Component } from './base/component';
 import { IEvents } from './base/events';
 
-export class BasketView {
+interface IBasketView {
+    items: HTMLElement[];
+    total: number;
+}
+
+export class BasketView extends Component <IBasketView> {
     protected events: IEvents;
 
     protected basketList: HTMLElement;
@@ -8,6 +15,7 @@ export class BasketView {
     protected basketButton: HTMLButtonElement;
 
     constructor(events: IEvents, protected container: HTMLElement) {
+        super(container);
         this.events = events;
 
         this.basketButton = this.container.querySelector('.basket__button');
@@ -17,26 +25,27 @@ export class BasketView {
         this.container.querySelector('.modal__title').setAttribute('style', 'color: #FFFFFF');
         this.basketPrice.setAttribute('style', 'color: #FFFFFF');
 
+        this.container.setAttribute('style', 'height: 90vh');
+        this.basketList.setAttribute('style', 'overflow: auto');
+
         this.basketButton.addEventListener('click', () => 
             this.events.emit('order:start')
         )
     }
 
-    clearBasketList(): void {
-        this.basketList.innerHTML = ''
-    };
-
-    set setBasketList(basketItemElement: HTMLElement) {
-        this.basketList.append(basketItemElement)
+    set basketItems(itemsList: HTMLElement[]) {
+        if (itemsList.length) {
+            this.basketList.replaceChildren(...itemsList);
+        } else {
+            this.basketList.replaceChildren(createElement<HTMLParagraphElement>('p', {
+                textContent: 'Корзина пуста',
+            }));
+            this.basketList.setAttribute('style', 'color: #FFFFFF');
+        }
     }
 
-    get getBasket(): HTMLElement {
-        return this.container
-    }
-        
-    render(total: number): HTMLElement {
+    set basketTotal(total: number) {
         this.basketPrice.textContent = `${total} синапсов`;
         total === 0 ? this.basketButton.setAttribute('disabled', 'true') : this.basketButton.removeAttribute('disabled');
-        return this.container;
     }
 }

@@ -1,6 +1,6 @@
 import { AppApi } from './components/AppApi';
 import { Api } from './components/base/api';
-import { EventEmitter, IEvents } from './components/base/events';
+import { EventEmitter } from './components/base/events';
 import { BasketView } from './components/basket';
 import { Modal } from './components/common/modal';
 import { GalleryView } from './components/gallery';
@@ -11,7 +11,7 @@ import { OrderSuccessView } from './components/ordersuccess';
 import { ProductView } from './components/product';
 import { ProductsListData } from './components/productslistdata';
 import './scss/styles.scss';
-import { IApi, IApiProductsList, IProduct, TOrderFullInfo, TProductBasketInfo } from './types';
+import { IApi, IApiProductsList, TOrderFullInfo, TProductBasketInfo } from './types';
 import { API_URL, settings } from './utils/constants';
 import { cloneTemplate } from './utils/utils';
 
@@ -62,22 +62,37 @@ const promiseGallery = new Promise((resolve) => {
 
 promiseGallery
     .then((resGallery: IApiProductsList) => {
-        productsList.setProductList = resGallery.items;
+        productsList.productList = resGallery.items;
     })
     .catch((err) => {
         console.log(err); // выводим ошибку в консоль
 });
 
 events.on('gallery:saved', () => {
-    galleryView.render(productsList.getProductList);
+
+    let galleryList: HTMLElement[] = [];
+    basketTotal = productsList.countBasketTotal();
+
+    productsList.productList.forEach((product) => {
+        const addProd = new ProductView(events, cloneTemplate(productGalleryTemplate));
+        galleryList.push(addProd.render(product))
+    })
+
+    galleryView.galleryItems = galleryList;
+    galleryView.counter = basketTotal;
+
+    galleryView.render({
+        items: galleryList,
+        total: basketTotal
+    });
 })
 
 events.on('card-preview:chosen', ({id}: {id: string}) => {
-    productsList.setShowFullCard = id;
+    productsList.fullCard = id;
 })
 
 events.on('card-preview-id:saved', () => {
-    modalView.setElement = showFullProd.render(productsList.selectProduct);
+    modalView.element = showFullProd.render(productsList.selectedProduct);
     modalView.openModal();
 })
 
@@ -87,14 +102,12 @@ events.on('card-basket:change', ({id: productId}: {id: string}) => {
 
 events.on('card-basket:changed', () => {
     basketTotal = productsList.countBasketTotal();
-    basketProductList = productsList.getBasketProductList;
+    basketProductList = productsList.basketProductList;
 
-//    let basketElement: HTMLElement = document.querySelector('.basket');
+    let basketList: HTMLElement[] = [];
     let addBasketItemElement: HTMLElement;
     let basketItemIndex: number = 0;
     let basketItemIndexElement: HTMLElement;
-
-    basketView.clearBasketList();
 
     basketProductList.forEach((product) => {
         let addProd = new ProductView(events, cloneTemplate(productBasketTemplate));
@@ -104,32 +117,35 @@ events.on('card-basket:changed', () => {
         basketItemIndexElement = addBasketItemElement.querySelector('.basket__item-index');
         basketItemIndexElement.textContent = `${basketItemIndex}`;
 
-        basketView.setBasketList = addBasketItemElement;
+        basketList.push(addBasketItemElement);
     })
 
-    basketElement = basketView.render(basketTotal);  //???
+    basketView.basketItems = basketList;
+    basketView.basketTotal = basketTotal;
 
-    showFullProd.render(productsList.selectProduct);    
-    galleryView.setBasketCounter = productsList.updateBasketCounter();
+    basketElement = basketView.render({
+        items: basketList,
+        total: basketTotal
+    });
+
+    showFullProd.render(productsList.selectedProduct);    
+    galleryView.counter = productsList.updateBasketCounter();
 })
 
 events.on('basket:open', () => {
-    if(basketTotal > 0) {
-        modalView.setElement = basketView.getBasket;
-//        modalView.setElement = basketElement;
+        modalView.element = basketView.render();
         modalView.openModal();
-    }
 })
 
 events.on('order:start', () => {
     modalView.closeModal();
-    modalView.setElement = orderPaymentView.render();
+    modalView.element = orderPaymentView.render();
+    orderPaymentView.setOrderButton(order.checkOrder());
     modalView.openModal();
 })
 
-
 events.on('payment:input', ({payment: data}: {payment: string}) => {
-    order.setPaymentData = data;
+    order.paymentData = data;
 })
 
 events.on('payment:saved', ({payment}: {payment: string}) => {
@@ -139,7 +155,7 @@ events.on('payment:saved', ({payment}: {payment: string}) => {
 })
 
 events.on('address:input', ({address: data}: {address: string}) => {
-    order.setAddressData = data;
+    order.addressData = data;
 })
 
 events.on('address:saved', () => {
@@ -148,16 +164,17 @@ events.on('address:saved', () => {
 
 events.on('order:continue', () => {
     modalView.closeModal();
-    modalView.setElement = orderContactsView.render();
+    modalView.element = orderContactsView.render();
+    orderContactsView.setContactsButton(order.checkContacts());    
     modalView.openModal();
 })
 
 events.on('email:input', ({email: data}: {email: string}) => {
-    order.setEmailData = data;
+    order.emailData = data;
 })
 
 events.on('phone:input', ({phone: data}: {phone: string}) => {
-    order.setPhoneData = data;
+    order.phoneData = data;
 })
 
 events.on('contacts:saved', () => {
@@ -166,9 +183,9 @@ events.on('contacts:saved', () => {
 
 events.on('order:fulfilled', () => {
 
-    let fullOrder: TOrderFullInfo = order.collectOrder;
+    let fullOrder: TOrderFullInfo = order.collectedOrder;
     fullOrder.total = productsList.countBasketTotal();
-    fullOrder.items = productsList.getBasketIdList;
+    fullOrder.items = productsList.basketIdList;
     
     const promiseOrder = new Promise((resolve) => {
         resolve(api.sendOrder(fullOrder))
@@ -178,20 +195,24 @@ events.on('order:fulfilled', () => {
         .then((resOrder: {id: string, total: number}) => {
 
             modalView.closeModal();
-
-            productsList.getBasketIdList.forEach((item) => productsList.changeProductInBasket(item));
-            orderPaymentView.resetPaymentInfo();
-            orderContactsView.resetContactsInfo();
+            productsList.basketIdList.forEach((item) => productsList.changeProductInBasket(item));
             order.resetOrderInfo();
 
-            orderSuccessView.setData = resOrder.total;
-            modalView.setElement = orderSuccessView.render();
+            orderSuccessView.totalData = resOrder.total;
+            modalView.element = orderSuccessView.render();
             modalView.openModal();
         })
         .catch((err) => {
             console.log(err);
     });
 })
+
+
+events.on('orderInfo:reseted', () => {
+    orderPaymentView.resetPaymentInfo();
+    orderContactsView.resetContactsInfo();
+})
+
 
 events.on('order:finished', () => {
     modalView.closeModal();

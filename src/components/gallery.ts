@@ -1,12 +1,12 @@
-import { productGalleryTemplate, productsList } from '..';
-import { IProduct } from '../types';
-import { cloneTemplate } from '../utils/utils';
 import { IEvents } from './base/events'
 import { Component } from './base/component';
-import { ProductView } from './product';
 
+interface IGalleryView {
+    items: HTMLElement[];
+    total: number;
+}
 
-export class GalleryView extends Component<IProduct[]> {
+export class GalleryView extends Component<IGalleryView> {
     protected element: HTMLElement;
     protected events: IEvents;
 
@@ -21,29 +21,17 @@ export class GalleryView extends Component<IProduct[]> {
         this.headerBasketButton = this.element.querySelector('.header__basket');
         this.basketCounter = this.element.querySelector('.header__basket-counter');
 
-//        this.container = container;
-
         this.headerBasketButton.addEventListener('click', () => 
             this.events.emit('basket:open')
         )
     }
 
-    set setBasketCounter(data: number) {
+    set counter(data: number) {
         this.basketCounter.textContent = `${data}`;
+        data === 0 ? this.headerBasketButton.setAttribute('disabled', 'true') : this.headerBasketButton.removeAttribute('disabled');
     }
 
-// перегрузка метода    
-    render(data?: Partial<IProduct[]>): HTMLElement;
-    render(productsList: Partial<IProduct[]>): HTMLElement;
-
-    render(prodArray: Partial<IProduct[]> | undefined): HTMLElement {
-
-        if(!productsList) return this.container;
-
-        prodArray.forEach((product) => {
-           const addProd = new ProductView(this.events, cloneTemplate(productGalleryTemplate));
-           this.container.append(addProd.render(product))
-        })
-        return this.container;
-    };
+    set galleryItems(galleryList: HTMLElement[]) {
+        this.container.replaceChildren(...galleryList);
+    }
 }
